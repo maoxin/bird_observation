@@ -2,7 +2,7 @@ import sys
 from os.path import realpath, dirname, join
 sys.path.append(join(dirname(dirname(realpath(__file__))), 'src'))
 import numpy as np
-from utils import grid_img
+from utils.grid_img import grid_img
 
 class TestGridImg(object):
     def test_overlap(self):

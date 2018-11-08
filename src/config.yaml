@@ -1,0 +1,15 @@
+nas:
+  model_name: faster_rcnn_nas_coco_2018_01_28
+  category_index:
+    16: bird
+iNaturalist:
+  model_name: faster_rcnn_resnet101_fgvc_2018_07_19
+  category_index:
+    3631: little_egret
+    2912: cattle_egret
+    2955: great_egret
+    8: Ondatra_zibethicus
+    64: Columba_palumbus
+    80: Carex_lupulina
+    177: Lottia_gigantea
+  
