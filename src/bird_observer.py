@@ -287,4 +287,6 @@ if __name__ == '__main__':
 
     bird_observer = BirdObserver(dataset_path=args.dataset, model=args.model, label_dir=args.label_dir)
     signal.signal(signal.SIGINT, bird_observer.stop)
+    signal.signal(signal.SIGTERM, bird_observer.stop)
+    signal.signal(signal.SIGABRT, bird_observer.stop)
     bird_observer.observe()
