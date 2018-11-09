@@ -109,8 +109,6 @@ class ObjectDetectionModel(object):
         output_dict['detection_labels'] = [self.category_index[i] for i in output_dict['detection_classes']]
         
         logging.info(f"🔍   Inference completed.")
-
-        print(output_dict)
         
         return output_dict
 

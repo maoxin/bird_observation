@@ -1,7 +1,8 @@
 nas:
   model_name: faster_rcnn_nas_coco_2018_01_28
   category_index:
-    16: bird
+    # 16: bird
+    16: great_egret
 iNaturalist:
   model_name: faster_rcnn_resnet101_fgvc_2018_07_19
   category_index:
