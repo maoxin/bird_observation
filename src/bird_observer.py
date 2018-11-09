@@ -137,11 +137,11 @@ class BirdObserver(object):
         self.to_stop = True
 
     def observe(self, num_records_if_not_full=100, full_records=True):
-        for result in tqdm(self.records_generator(num_records_if_not_full, full_records)):
+        for result in self.records_generator(num_records_if_not_full, full_records):
             self.write_result(result)
             self.write_result_vott(result)
 
-            if self.to_stop = True:
+            if self.to_stop == True:
                 break
         
     def records_generator(self, num_records_if_not_full=100, full_records=True, grid=False):
@@ -162,6 +162,8 @@ class BirdObserver(object):
                 else:
                     pass
 
+                self.dataset.set_progress(self.dataset.get_progress()+step)
+
                 yield {
                     'image_bgr': image_bgr,
                     'image_rgb': image_rgb,
@@ -170,8 +172,6 @@ class BirdObserver(object):
                     'image_width': image_bgr.shape[1],
                     'image_height': image_bgr.shape[0],
                 }
-
-                self.dataset.set_progress(self.dataset.get_progress()+step)
 
             except AssertionError as e:
                 print(e.args[0])
@@ -286,5 +286,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     bird_observer = BirdObserver(dataset_path=args.dataset, model=args.model, label_dir=args.label_dir)
-    signal.signal(signal.SIGINT, bird_observer.close)
+    signal.signal(signal.SIGINT, bird_observer.stop)
     bird_observer.observe()
