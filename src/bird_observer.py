@@ -16,7 +16,7 @@ from tqdm import tqdm
 from PIL import Image
 import time
 
-from threading import Thread
+import signal
 
 class DataSet(object):
     def __init__(self, dataset_path):
@@ -131,15 +131,18 @@ class BirdObserver(object):
         self.label_dir = label_dir
         self.dataset = DataSet(self.dataset_path)
 
+        self.to_stop = False
+
+    def stop(self, signalnum, frame):
+        self.to_stop = True
+
     def observe(self, num_records_if_not_full=100, full_records=True):
         for result in tqdm(self.records_generator(num_records_if_not_full, full_records)):
-            write_result = Thread(target=self.write_result_all)
-            write_result.start()
-            write_result.join()
+            self.write_result(result)
+            self.write_result_vott(result)
 
-    def write_result_all(self, result):
-        self.write_result(result)
-        self.write_result_vott(result)
+            if self.to_stop = True:
+                break
         
     def records_generator(self, num_records_if_not_full=100, full_records=True, grid=False):
         if full_records:
@@ -283,4 +286,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     bird_observer = BirdObserver(dataset_path=args.dataset, model=args.model, label_dir=args.label_dir)
+    signal.signal(signal.SIGINT, bird_observer.close)
     bird_observer.observe()
