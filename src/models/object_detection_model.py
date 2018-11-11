@@ -14,8 +14,8 @@ import logging
 
 
 class ObjectDetectionModel(object):
-    def __init__(self, model_name, category_index):
-        self.cluster = tf.train.ClusterSpec({"frcnn": ["192.168.1.200:2333"]})
+    def __init__(self, model_name, category_index, port=2333):
+        self.cluster = tf.train.ClusterSpec({"frcnn": ["192.168.1.200:{}".format(port)]})
 
         # self.model_name = 'faster_rcnn_inception_resnet_v2_atrous_coco_2018_01_28'
         # self.model_name = 'faster_rcnn_nas_coco_2018_01_28'
@@ -66,7 +66,7 @@ class ObjectDetectionModel(object):
         
         logging.info(f"📤  Load completed.")
 
-        self.sess = tf.Session("grpc://192.168.1.200:2333", graph=self.detection_graph)
+        self.sess = tf.Session("grpc://192.168.1.200:{}".format(port), graph=self.detection_graph)
 
         # self.category_index = {
             # 3: 'Private Car',

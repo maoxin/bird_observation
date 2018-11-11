@@ -120,16 +120,19 @@ class ImageDir(object):
 
 
 class BirdObserver(object):
-    def __init__(self, dataset_path='../data/img_data/integr', label_dir='../results/integr', model='nas'):
+    def __init__(self, dataset_path='../data/img_data/integr', label_dir='../results/integr', model='nas', port=2333):
         # use yaml to load model info
         with open('config.yaml', 'r') as f:
             config = yaml.load(f.read())
         self.detect_model = ObjectDetectionModel(model_name=config[model]['model_name'],
-                                                 category_index=config[model]['category_index'])
+                                                 category_index=config[model]['category_index'],
+                                                 port=port)
         
         self.dataset_path = dataset_path
         self.label_dir = label_dir
         self.dataset = DataSet(self.dataset_path)
+
+        self.vott_dict = None
 
         self.to_stop = False
 
@@ -139,10 +142,15 @@ class BirdObserver(object):
     def observe(self, num_records_if_not_full=100, full_records=True):
         for result in self.records_generator(num_records_if_not_full, full_records):
             self.write_result(result)
-            self.write_result_vott(result)
+            self.cache_result_vott(result)
 
             if self.to_stop == True:
+                with open(f"{self.label_dir}/images.json", 'w') as f:
+                    json.dump(self.vott_dict, f)
                 break
+        else:
+            with open(f"{self.label_dir}/images.json", 'w') as f:
+                json.dump(self.vott_dict, f)
         
     def records_generator(self, num_records_if_not_full=100, full_records=True, grid=False):
         if full_records:
@@ -223,32 +231,33 @@ class BirdObserver(object):
 
         logging.info("📦  label saved")
 
-    def write_result_vott(self, result):
-        try: 
-            with open(f"{self.label_dir}/images.json", 'r') as f:
-                vott_dict = json.load(f)
-        except FileNotFoundError:
-            vott_dict = {"frames": {},
-                        "framerate":"1",
-                        "inputTags":"little_egret,cattle_egret,great_egret,intermidiate_egret",
-                        "suggestiontype":"track",
-                        "scd":False,
-                        "visitedFrames":[],
-                        "tag_colors":["#117B76", "#ED62A7", "#FC6554", "#FAE047"]}
-            with open(f"{self.label_dir}/images.json", 'w') as f:
-                json.dump(vott_dict, f)
+    def cache_result_vott(self, result):
+        if self.vott_dict is None:
+            try: 
+                with open(f"{self.label_dir}/images.json", 'r') as f:
+                    self.vott_dict = json.load(f)
+            except FileNotFoundError:
+                self.vott_dict = {"frames": {},
+                            "framerate":"1",
+                            "inputTags":"little_egret,cattle_egret,great_egret,intermidiate_egret",
+                            "suggestiontype":"track",
+                            "scd":False,
+                            "visitedFrames":[],
+                            "tag_colors":["#117B76", "#ED62A7", "#FC6554", "#FAE047"]}
+                # with open(f"{self.label_dir}/images.json", 'w') as f:
+                    # json.dump(self.vott_dict, f)
 
         try:
-            visited_frame_now = vott_dict['visitedFrames'][-1] + 1
+            visited_frame_now = self.vott_dict['visitedFrames'][-1] + 1
         except IndexError:
             visited_frame_now = 0
         try:
-            id_now = vott_dict['frames'][str(vott_dict['visitedFrames'][-1])][-1]['id'] + 1
+            id_now = self.vott_dict['frames'][str(self.vott_dict['visitedFrames'][-1])][-1]['id'] + 1
         except IndexError:
             id_now = 0
 
-        vott_dict['frames'][str(visited_frame_now)] = []
-        vott_dict['visitedFrames'].append(visited_frame_now)
+        self.vott_dict['frames'][str(visited_frame_now)] = []
+        self.vott_dict['visitedFrames'].append(visited_frame_now)
 
         for i, (label, box) in enumerate(zip(result['label_out']['detection_labels'], result['label_out']['detection_boxes'])):
             y1, x1, y2, x2 = box
@@ -263,7 +272,7 @@ class BirdObserver(object):
             tags = [label]
             # tags = ['intermidiate_egret']
 
-            vott_dict['frames'][str(visited_frame_now)].append(
+            self.vott_dict['frames'][str(visited_frame_now)].append(
                     {
                         "x1": x1, "y1": y1, "x2": x2, "y2": y2,
                         "id": id_now + i, "width": width, "height": height, 
@@ -271,8 +280,8 @@ class BirdObserver(object):
                     }
             )
         
-        with open(f"{self.label_dir}/images.json", 'w') as f:
-            json.dump(vott_dict, f)
+        # with open(f"{self.label_dir}/images.json", 'w') as f:
+            # json.dump(vott_dict, f)
 
 
     
@@ -283,9 +292,11 @@ if __name__ == '__main__':
     parser.add_argument('-l', '--label_dir', type=str, default='../results/greegr')
     parser.add_argument('-m', '--model', type=str, default='nas',
                     help='The object detection model')
+    parser.add_argument('-p', '--port', type=int, default=2333,
+                    help='server port')
     args = parser.parse_args()
 
-    bird_observer = BirdObserver(dataset_path=args.dataset, model=args.model, label_dir=args.label_dir)
+    bird_observer = BirdObserver(dataset_path=args.dataset, model=args.model, label_dir=args.label_dir, port=args.port)
     signal.signal(signal.SIGINT, bird_observer.stop)
     signal.signal(signal.SIGTERM, bird_observer.stop)
     signal.signal(signal.SIGABRT, bird_observer.stop)
